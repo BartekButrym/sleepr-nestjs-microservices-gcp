@@ -11,6 +11,7 @@ import { UserDto } from '../dto';
 
 type JwtRequest = {
   cookies?: Record<string, string>;
+  headers?: Record<string, string>;
   user?: UserDto;
 };
 
@@ -22,7 +23,8 @@ export class JwtAuthGuard implements CanActivate {
     context: ExecutionContext,
   ): boolean | Promise<boolean> | Observable<boolean> {
     const request = context.switchToHttp().getRequest<JwtRequest>();
-    const jwt = request.cookies?.Authentication;
+    const jwt =
+      request.cookies?.Authentication || request.headers?.authentication;
 
     if (!jwt) {
       return false;

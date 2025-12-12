@@ -29,11 +29,15 @@ services:
     image: europe-central2-docker.pkg.dev/sleepr-478116/payments/production
     env_file:
       - ../apps/payments/.env
+    ports:
+      - '3003:3003'
 
   notifications:
     image: europe-central2-docker.pkg.dev/sleepr-478116/notifications/production
     env_file:
       - ../apps/notifications/.env
+    ports:
+      - '3004:3004'
 
   mongo:
     image: mongo

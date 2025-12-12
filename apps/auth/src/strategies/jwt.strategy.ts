@@ -29,7 +29,16 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
           }
 
           const requestToken = request?.Authentication;
-          return typeof requestToken === 'string' ? requestToken : null;
+
+          if (typeof requestToken === 'string') {
+            return requestToken;
+          }
+
+          if (request.headers.Authentication) {
+            return request.headers.Authentication as string;
+          }
+
+          return null;
         },
       ]),
       secretOrKey: configService.getOrThrow('JWT_SECRET'),

@@ -4,6 +4,7 @@ import {
   UnprocessableEntityException,
 } from '@nestjs/common';
 import bcrypt from 'bcryptjs';
+import { User } from '@app/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UsersRepository } from './users.repository';
 import { GetUserDto } from './dto/get-user.dto';
@@ -12,9 +13,9 @@ import { GetUserDto } from './dto/get-user.dto';
 export class UsersService {
   constructor(private readonly usersRepository: UsersRepository) {}
 
-  private async validateCreateUserDto(createUserDto: CreateUserDto) {
+  private async validateCreateUser(createUserDto: CreateUserDto) {
     try {
-      await this.usersRepository.findBy({ email: createUserDto.email });
+      await this.usersRepository.findOne({ email: createUserDto.email });
     } catch (errors) {
       console.log(errors);
       return;
@@ -24,16 +25,17 @@ export class UsersService {
   }
 
   async create(createUserDto: CreateUserDto) {
-    await this.validateCreateUserDto(createUserDto);
+    await this.validateCreateUser(createUserDto);
 
     return await this.usersRepository.create({
       ...createUserDto,
       password: await bcrypt.hash(createUserDto.password, 10),
-    });
+      roles: createUserDto.roles?.map((roleDto) => roleDto),
+    } as User);
   }
 
   async verifyUser(email: string, password: string) {
-    const user = await this.usersRepository.findBy({ email });
+    const user = await this.usersRepository.findOne({ email });
     const isPasswordValid = await bcrypt.compare(password, user.password);
 
     if (!isPasswordValid) {
@@ -44,6 +46,6 @@ export class UsersService {
   }
 
   async getUser(getUserDto: GetUserDto) {
-    return await this.usersRepository.findBy(getUserDto);
+    return await this.usersRepository.findOne(getUserDto, { roles: true });
   }
 }

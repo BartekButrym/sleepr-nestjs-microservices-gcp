@@ -5,9 +5,28 @@ interface RequestWithUser {
   user: UserDocument;
 }
 
+interface GraphQLContext {
+  req: {
+    headers: {
+      user?: string;
+    };
+  };
+}
+
 const getCurrentUserByContext = (context: ExecutionContext): UserDocument => {
-  const request = context.switchToHttp().getRequest<RequestWithUser>();
-  return request.user;
+  if (context.getType() === 'http') {
+    const request = context.switchToHttp().getRequest<RequestWithUser>();
+    return request.user;
+  }
+
+  const graphqlContext = context.getArgs()[2] as GraphQLContext;
+  const user = graphqlContext?.req?.headers?.user;
+
+  if (!user) {
+    throw new Error('User not found in context');
+  }
+
+  return JSON.parse(user) as UserDocument;
 };
 
 export const CurrentUser = createParamDecorator(

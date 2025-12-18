@@ -46,4 +46,8 @@ export class UsersService {
   async getUser(getUserDto: GetUserDto) {
     return await this.usersRepository.findBy(getUserDto);
   }
+
+  async findAll() {
+    return await this.usersRepository.find({});
+  }
 }

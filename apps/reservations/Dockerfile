@@ -26,4 +26,6 @@ RUN npm install --only=production
 
 COPY --from=development /usr/src/app/dist ./dist
 
+COPY proto proto
+
 CMD ["node", "dist/apps/reservations/main.js"]

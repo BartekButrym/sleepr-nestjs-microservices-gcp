@@ -1,0 +1,17 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Reservation {
+  id        Int      @id @default(autoincrement())
+  timestamp DateTime
+  startDate DateTime
+  endDate   DateTime
+  userId    Int
+  invoiceId String
+}

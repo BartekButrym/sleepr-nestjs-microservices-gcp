@@ -5,16 +5,18 @@ import {
 } from '@nestjs/common';
 import bcrypt from 'bcryptjs';
 import { CreateUserDto } from './dto/create-user.dto';
-import { UsersRepository } from './users.repository';
 import { GetUserDto } from './dto/get-user.dto';
+import { PrismaService } from '../prisma.service';
 
 @Injectable()
 export class UsersService {
-  constructor(private readonly usersRepository: UsersRepository) {}
+  constructor(private readonly prismaService: PrismaService) {}
 
   private async validateCreateUserDto(createUserDto: CreateUserDto) {
     try {
-      await this.usersRepository.findBy({ email: createUserDto.email });
+      await this.prismaService.user.findFirstOrThrow({
+        where: { email: createUserDto.email },
+      });
     } catch (errors) {
       console.log(errors);
       return;
@@ -26,14 +28,18 @@ export class UsersService {
   async create(createUserDto: CreateUserDto) {
     await this.validateCreateUserDto(createUserDto);
 
-    return await this.usersRepository.create({
-      ...createUserDto,
-      password: await bcrypt.hash(createUserDto.password, 10),
+    return await this.prismaService.user.create({
+      data: {
+        ...createUserDto,
+        password: await bcrypt.hash(createUserDto.password, 10),
+      },
     });
   }
 
   async verifyUser(email: string, password: string) {
-    const user = await this.usersRepository.findBy({ email });
+    const user = await this.prismaService.user.findFirstOrThrow({
+      where: { email },
+    });
     const isPasswordValid = await bcrypt.compare(password, user.password);
 
     if (!isPasswordValid) {
@@ -44,6 +50,8 @@ export class UsersService {
   }
 
   async getUser(getUserDto: GetUserDto) {
-    return await this.usersRepository.findBy(getUserDto);
+    return await this.prismaService.user.findUniqueOrThrow({
+      where: { id: +getUserDto.id },
+    });
   }
 }

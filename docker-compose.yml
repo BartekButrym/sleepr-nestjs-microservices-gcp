@@ -4,7 +4,9 @@ services:
       context: .
       dockerfile: ./apps/reservations/Dockerfile
       target: development
-    command: npm run start:debug reservations
+    command: sh -c "cd apps/reservations && npx prisma migrate deploy && npx prisma generate && cd ../.. && npm run start:dev reservations"
+    depends_on:
+      - postgres
     env_file:
       - ./apps/reservations/.env
     ports:
@@ -18,7 +20,9 @@ services:
       context: .
       dockerfile: ./apps/auth/Dockerfile
       target: development
-    command: npm run start:dev auth
+    command: sh -c "cd apps/auth && npx prisma migrate deploy && npx prisma generate && cd ../.. && npm run start:dev auth"
+    depends_on:
+      - postgres
     env_file:
       - ./apps/auth/.env
     ports:
@@ -48,5 +52,9 @@ services:
     volumes:
       - .:/usr/src/app
 
-  mongo:
-      image: mongo
+  postgres:
+    image: postgres
+    ports:
+      - '5432:5432'
+    environment:
+      POSTGRES_PASSWORD: postgres

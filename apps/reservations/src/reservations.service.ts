@@ -1,10 +1,10 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { map } from 'rxjs';
-import { PAYMENTS_SERVICE, UserDto } from '@app/common';
+import { PAYMENTS_SERVICE, User } from '@app/common';
 import { CreateReservationDto } from './dto/create-reservation.dto';
 import { UpdateReservationDto } from './dto/update-reservation.dto';
-import { ReservationsRepository } from './reservations.repository';
+import { PrismaService } from './prisma.service';
 
 type CreateChargeResponse = {
   id: string;
@@ -13,13 +13,13 @@ type CreateChargeResponse = {
 @Injectable()
 export class ReservationsService {
   constructor(
-    private readonly reservationsRepository: ReservationsRepository,
+    private readonly prismaService: PrismaService,
     @Inject(PAYMENTS_SERVICE) private readonly paymentsService: ClientProxy,
   ) {}
 
   create(
     createReservationDto: CreateReservationDto,
-    { email, _id: userId }: UserDto,
+    { email, id: userId }: User,
   ) {
     return this.paymentsService
       .send<CreateChargeResponse>('create_charge', {
@@ -28,32 +28,39 @@ export class ReservationsService {
       })
       .pipe(
         map((response: CreateChargeResponse) => {
-          return this.reservationsRepository.create({
-            ...createReservationDto,
-            invoiceId: response.id,
-            timestamp: new Date(),
-            userId,
+          return this.prismaService.reservation.create({
+            data: {
+              startDate: createReservationDto.startDate,
+              endDate: createReservationDto.endDate,
+              invoiceId: response.id,
+              timestamp: new Date(),
+              userId,
+            },
           });
         }),
       );
   }
 
   async findAll() {
-    return await this.reservationsRepository.find({});
+    return await this.prismaService.reservation.findMany({});
   }
 
-  async findOne(_id: string) {
-    return await this.reservationsRepository.findBy({ _id });
+  async findOne(id: number) {
+    return await this.prismaService.reservation.findUniqueOrThrow({
+      where: { id },
+    });
   }
 
-  async update(_id: string, updateReservationDto: UpdateReservationDto) {
-    return await this.reservationsRepository.findOneAndUpdate(
-      { _id },
-      { $set: updateReservationDto },
-    );
+  async update(id: number, updateReservationDto: UpdateReservationDto) {
+    return await this.prismaService.reservation.update({
+      where: { id },
+      data: updateReservationDto,
+    });
   }
 
-  async remove(_id: string) {
-    return await this.reservationsRepository.findOneAndDelete({ _id });
+  async remove(id: number) {
+    return await this.prismaService.reservation.delete({
+      where: { id },
+    });
   }
 }
